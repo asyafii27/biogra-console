@@ -59,7 +59,7 @@ export default function BiographyForm() {
       } else {
         await BiographyService.create(values);
       }
-      navigate('/');
+      navigate('/admin');
     } catch (error) {
       console.error('Failed to save biography', error);
       alert('Failed to save biography');
@@ -114,7 +114,7 @@ export default function BiographyForm() {
           />
           
           <Group justify="flex-end" mt="md">
-            <Button variant="default" onClick={() => navigate('/')} disabled={loading}>Cancel</Button>
+            <Button variant="default" onClick={() => navigate('/admin')} disabled={loading}>Cancel</Button>
             <Button type="submit" loading={loading}>Save</Button>
           </Group>
         </Stack>

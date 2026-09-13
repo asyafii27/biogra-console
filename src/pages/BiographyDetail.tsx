@@ -41,7 +41,7 @@ export default function BiographyDetail() {
     return (
       <Stack align="center" mt="xl">
         <Text>Biography not found.</Text>
-        <Button onClick={() => navigate('/')} variant="light">Back to List</Button>
+        <Button onClick={() => navigate('/admin')} variant="light">Back to List</Button>
       </Stack>
     );
   }
@@ -49,13 +49,13 @@ export default function BiographyDetail() {
   return (
     <div>
       <Group justify="space-between" mb="md">
-        <Button leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={() => navigate('/')}>
+        <Button leftSection={<IconArrowLeft size={16} />} variant="subtle" onClick={() => navigate('/admin')}>
           Back
         </Button>
         <Button 
           leftSection={<IconEdit size={16} />} 
           color="yellow" 
-          onClick={() => navigate(`/biography/edit/${biography.id}`)}
+          onClick={() => navigate(`/admin/edit/${biography.id}`)}
         >
           Edit
         </Button>

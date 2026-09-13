@@ -51,7 +51,7 @@ export default function BiographyList() {
     <div>
       <Group justify="space-between" mb="lg">
         <Title order={2}>Biographies</Title>
-        <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/biography/create')}>
+        <Button leftSection={<IconPlus size={16} />} onClick={() => navigate('/admin/create')}>
           Add Biography
         </Button>
       </Group>
@@ -90,10 +90,10 @@ export default function BiographyList() {
               </Text>
 
               <Group justify="flex-end" mt="auto">
-                <ActionIcon variant="light" color="blue" onClick={() => navigate(`/biography/${bio.id}`)} title="View">
+                <ActionIcon variant="light" color="blue" onClick={() => navigate(`/admin/${bio.id}`)} title="View">
                   <IconEye size={18} />
                 </ActionIcon>
-                <ActionIcon variant="light" color="yellow" onClick={() => navigate(`/biography/edit/${bio.id}`)} title="Edit">
+                <ActionIcon variant="light" color="yellow" onClick={() => navigate(`/admin/edit/${bio.id}`)} title="Edit">
                   <IconEdit size={18} />
                 </ActionIcon>
                 <ActionIcon variant="light" color="red" onClick={() => handleDelete(bio.id)} title="Delete">

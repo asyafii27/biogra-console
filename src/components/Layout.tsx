@@ -10,8 +10,8 @@ export default function Layout() {
   const theme = useMantineTheme();
 
   const links = [
-    { icon: IconUsers, label: 'Biographies', path: '/' },
-    { icon: IconUserPlus, label: 'Add Biography', path: '/biography/create' },
+    { icon: IconUsers, label: 'Biographies', path: '/admin' },
+    { icon: IconUserPlus, label: 'Add Biography', path: '/admin/create' },
   ];
 
   return (
