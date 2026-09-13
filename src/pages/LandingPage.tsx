@@ -18,6 +18,8 @@ import {
   Divider,
   Affix,
   Transition,
+  Menu,
+  Avatar,
 } from "@mantine/core";
 import {
   IconArrowRight,
@@ -29,14 +31,45 @@ import {
   IconUsers,
   IconSettings,
   IconMapPin,
+  IconLogout,
+  IconDashboard,
 } from "@tabler/icons-react";
 import { useNavigate } from "react-router-dom";
 import { useWindowScroll } from "@mantine/hooks";
+import { useEffect, useState } from "react";
+import { jwtDecode } from "jwt-decode";
+import { AuthService } from "../services/api";
+
+interface UserJwtPayload {
+  user_id: string;
+  name: string;
+  email: string;
+  exp: number;
+}
 
 export default function LandingPage() {
   const navigate = useNavigate();
   const theme = useMantineTheme();
   const [scroll] = useWindowScroll();
+
+  const [user, setUser] = useState<UserJwtPayload | null>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (token) {
+      try {
+        const decoded = jwtDecode<UserJwtPayload>(token);
+        setUser(decoded);
+      } catch (err) {
+        console.error("Invalid token", err);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    AuthService.logout();
+    setUser(null);
+  };
 
   return (
     <Box
@@ -65,28 +98,91 @@ export default function LandingPage() {
                 c="dark.9"
                 style={{ letterSpacing: -0.5 }}
               >
-                MyProfile
+                DreamDev
               </Text>
             </Group>
             <Group gap="lg" visibleFrom="sm">
-              <Text fw={600} size="sm" style={{ cursor: "pointer" }} onClick={() => document.getElementById('home')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Text
+                fw={600}
+                size="sm"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  document
+                    .getElementById("home")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
                 Home
               </Text>
-              <Text fw={600} size="sm" c="dimmed" style={{ cursor: "pointer" }} onClick={() => document.getElementById('about')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Text
+                fw={600}
+                size="sm"
+                c="dimmed"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  document
+                    .getElementById("about")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
                 About
               </Text>
-              <Text fw={600} size="sm" c="dimmed" style={{ cursor: "pointer" }} onClick={() => document.getElementById('portfolio')?.scrollIntoView({ behavior: 'smooth' })}>
+              <Text
+                fw={600}
+                size="sm"
+                c="dimmed"
+                style={{ cursor: "pointer" }}
+                onClick={() =>
+                  document
+                    .getElementById("portfolio")
+                    ?.scrollIntoView({ behavior: "smooth" })
+                }
+              >
                 Portfolio
               </Text>
-              <Button
-                variant="light"
-                color="blue"
-                onClick={() => navigate("/login")}
-                radius="xl"
-                size="sm"
-              >
-                Login / Admin
-              </Button>
+              {user ? (
+                <Menu shadow="md" width={200}>
+                  <Menu.Target>
+                    <Group gap="xs" style={{ cursor: "pointer" }}>
+                      <Avatar color="blue" radius="xl" size="sm">
+                        {user.name.charAt(0).toUpperCase()}
+                      </Avatar>
+                      <Text fw={600} size="sm">
+                        {user.name}
+                      </Text>
+                    </Group>
+                  </Menu.Target>
+
+                  <Menu.Dropdown>
+                    <Menu.Label>Application</Menu.Label>
+                    <Menu.Item
+                      leftSection={<IconDashboard size={14} />}
+                      onClick={() => navigate("/admin")}
+                    >
+                      Admin Console
+                    </Menu.Item>
+                    <Menu.Divider />
+                    <Menu.Label>Danger zone</Menu.Label>
+                    <Menu.Item
+                      color="red"
+                      leftSection={<IconLogout size={14} />}
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </Menu.Item>
+                  </Menu.Dropdown>
+                </Menu>
+              ) : (
+                <Button
+                  variant="light"
+                  color="blue"
+                  onClick={() => navigate("/login")}
+                  radius="xl"
+                  size="sm"
+                >
+                  Login
+                </Button>
+              )}
             </Group>
           </Group>
         </Container>

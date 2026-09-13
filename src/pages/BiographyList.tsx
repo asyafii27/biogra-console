@@ -17,11 +17,23 @@ export default function BiographyList() {
   const fetchBiographies = async (searchQuery?: string) => {
     setLoading(true);
     try {
-      const data = await BiographyService.getAll(searchQuery);
-      setBiographies(data || []);
+      const response = await BiographyService.getAll(searchQuery);
+      // Safely extract the array depending on the backend response structure
+      let dataToSet: Biography[] = [];
+      if (Array.isArray(response)) {
+        dataToSet = response;
+      } else if (response && typeof response === 'object') {
+        // Fallback for wrapped responses like { data: [...] } or { biographies: [...] }
+        const anyResponse = response as any;
+        if (Array.isArray(anyResponse.data)) {
+          dataToSet = anyResponse.data;
+        } else if (Array.isArray(anyResponse.biographies)) {
+          dataToSet = anyResponse.biographies;
+        }
+      }
+      setBiographies(dataToSet);
     } catch (error) {
       console.error('Failed to fetch biographies', error);
-      // fallback to empty if error
       setBiographies([]);
     } finally {
       setLoading(false);
@@ -72,7 +84,7 @@ export default function BiographyList() {
         <Group justify="center" mt="xl">
           <Loader />
         </Group>
-      ) : biographies.length === 0 ? (
+      ) : !Array.isArray(biographies) || biographies.length === 0 ? (
         <Text c="dimmed" ta="center" mt="xl">No biographies found.</Text>
       ) : (
         <SimpleGrid cols={{ base: 1, sm: 2, lg: 3 }} spacing="md">

@@ -1,8 +1,8 @@
 import axios from 'axios';
 import type { Biography, BiographyCreateInput, BiographyUpdateInput } from '../types/biography';
 
-// Default to localhost:8080 if not specified
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080/api';
+// Default to localhost:8081 if not specified
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8081/api';
 
 const apiClient = axios.create({
   baseURL: API_URL,
@@ -10,6 +10,32 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Add a request interceptor to attach the JWT token to all requests
+apiClient.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token && config.headers) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+export const AuthService = {
+  login: async (data: any) => {
+    const response = await apiClient.post('/auth/login', data);
+    if (response.data.token) {
+      localStorage.setItem('token', response.data.token);
+    }
+    return response.data;
+  },
+  register: async (data: any) => {
+    const response = await apiClient.post('/auth/register', data);
+    return response.data;
+  },
+  logout: () => {
+    localStorage.removeItem('token');
+  }
+};
 
 export const BiographyService = {
   getAll: async (search?: string) => {
