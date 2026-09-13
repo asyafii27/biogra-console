@@ -4,6 +4,8 @@ import LandingPage from './pages/LandingPage';
 import BiographyList from './pages/BiographyList';
 import BiographyDetail from './pages/BiographyDetail';
 import BiographyForm from './pages/BiographyForm';
+import LoginPage from './pages/LoginPage';
+import RegisterPage from './pages/RegisterPage';
 import '@mantine/core/styles.css';
 
 function App() {
@@ -11,6 +13,8 @@ function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/" element={<LandingPage />} />
+        <Route path="/login" element={<LoginPage />} />
+        <Route path="/register" element={<RegisterPage />} />
         <Route path="/admin" element={<Layout />}>
           <Route index element={<BiographyList />} />
           <Route path="create" element={<BiographyForm />} />

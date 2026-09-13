@@ -81,7 +81,7 @@ export default function LandingPage() {
               <Button
                 variant="light"
                 color="blue"
-                onClick={() => navigate("/admin")}
+                onClick={() => navigate("/login")}
                 radius="xl"
                 size="sm"
               >
