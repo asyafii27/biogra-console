@@ -1,6 +1,6 @@
 import { AppShell, Burger, Group, Title, NavLink, Box, useMantineTheme, Text, Menu, Avatar } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
-import { IconUsers, IconUserPlus, IconLogout, IconSettings } from '@tabler/icons-react';
+import { IconUsers, IconUserPlus, IconLogout, IconSettings, IconBriefcase, IconAward, IconBuildingCommunity, IconCode, IconDeviceDesktop } from '@tabler/icons-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { useEffect, useState } from 'react';
@@ -45,6 +45,11 @@ export default function Layout() {
   const links = [
     { icon: IconUsers, label: 'Biographies', path: '/admin' },
     { icon: IconUserPlus, label: 'Add Biography', path: '/admin/create' },
+    { icon: IconBriefcase, label: 'Experience', path: '/admin/experience' },
+    { icon: IconAward, label: 'Awardee', path: '/admin/awardee' },
+    { icon: IconBuildingCommunity, label: 'Organization', path: '/admin/organization' },
+    { icon: IconCode, label: 'Skills', path: '/admin/skills' },
+    { icon: IconDeviceDesktop, label: 'Tech Experience', path: '/admin/technical-experience' },
   ];
 
   return (
