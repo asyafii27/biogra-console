@@ -4,6 +4,8 @@ import { BiographyService } from '../services/api';
 import { 
   Title, TextInput, Button, Group, Paper, Stack, Textarea 
 } from '@mantine/core';
+import { DatePickerInput } from '@mantine/dates';
+import dayjs from 'dayjs';
 import { useForm } from '@mantine/form';
 import { useNavigate, useParams } from 'react-router-dom';
 
@@ -81,11 +83,13 @@ export default function BiographyForm() {
             {...form.getInputProps('name')}
           />
           <Group grow>
-            <TextInput
+            <DatePickerInput
               required
-              type="date"
               label="Birth Date"
-              {...form.getInputProps('birth_date')}
+              placeholder="Pick a date"
+              value={form.values.birth_date ? new Date(form.values.birth_date) : null}
+              onChange={(date) => form.setFieldValue('birth_date', date ? dayjs(date).format('YYYY-MM-DD') : '')}
+              error={form.errors.birth_date}
             />
             <TextInput
               required

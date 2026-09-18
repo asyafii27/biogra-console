@@ -12,7 +12,6 @@ import {
   Button,
   Alert,
   Grid,
-  Image,
   Box,
   Center,
 } from '@mantine/core';
@@ -44,7 +43,7 @@ export default function LoginPage() {
   };
 
   return (
-    <Grid gutter={0} style={{ minHeight: '100vh', margin: 0 }}>
+    <Grid style={{ minHeight: '100vh', margin: 0 }}>
       {/* Left side: Image */}
       <Grid.Col span={{ base: 12, md: 6 }} visibleFrom="md">
         <Box

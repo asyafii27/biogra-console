@@ -38,6 +38,7 @@ import { useNavigate } from "react-router-dom";
 import { useWindowScroll } from "@mantine/hooks";
 import { useEffect, useState } from "react";
 import { jwtDecode } from "jwt-decode";
+import ThemeToggle from "../components/ThemeToggle";
 import { AuthService } from "../services/api";
 
 interface UserJwtPayload {
@@ -140,6 +141,7 @@ export default function LandingPage() {
               >
                 Portfolio
               </Text>
+              <ThemeToggle />
               {user ? (
                 <Menu shadow="md" width={200}>
                   <Menu.Target>

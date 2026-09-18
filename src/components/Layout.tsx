@@ -1,10 +1,11 @@
-import { AppShell, Burger, Group, Title, NavLink, Box, useMantineTheme, Text, Button, Menu, Avatar } from '@mantine/core';
+import { AppShell, Burger, Group, Title, NavLink, Box, useMantineTheme, Text, Menu, Avatar } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconUsers, IconUserPlus, IconLogout, IconSettings } from '@tabler/icons-react';
 import { Outlet, useLocation, useNavigate } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
 import { useEffect, useState } from 'react';
 import { AuthService } from '../services/api';
+import ThemeToggle from './ThemeToggle';
 
 interface UserJwtPayload {
   user_id: string;
@@ -62,9 +63,10 @@ export default function Layout() {
             <Burger opened={opened} onClick={toggle} size="sm" />
             <Title order={3} c={theme.primaryColor}>DreamDev</Title>
           </Group>
-          
-          <Menu shadow="md" width={200}>
-            <Menu.Target>
+          <Group>
+            <ThemeToggle />
+            <Menu shadow="md" width={200}>
+              <Menu.Target>
               <Group gap="xs" style={{ cursor: 'pointer' }}>
                 <Avatar color="blue" radius="xl" size="sm">
                   {user ? user.name.charAt(0).toUpperCase() : 'A'}
@@ -89,6 +91,7 @@ export default function Layout() {
               </Menu.Item>
             </Menu.Dropdown>
           </Menu>
+          </Group>
         </Group>
       </AppShell.Header>
 

@@ -7,6 +7,7 @@ import BiographyForm from './pages/BiographyForm';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
 import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
 
 function App() {
   return (
