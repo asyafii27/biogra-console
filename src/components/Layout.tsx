@@ -105,7 +105,11 @@ export default function Layout() {
           {links.map((link) => (
             <NavLink
               key={link.path}
-              active={location.pathname === link.path || (link.path !== '/' && location.pathname.startsWith(link.path))}
+              active={
+                link.path === '/admin'
+                  ? location.pathname === '/admin' || location.pathname.startsWith('/admin/edit')
+                  : location.pathname.startsWith(link.path)
+              }
               label={link.label}
               leftSection={<link.icon size="1rem" stroke={1.5} />}
               onClick={() => {
@@ -132,8 +136,8 @@ export default function Layout() {
         </Box>
       </AppShell.Navbar>
 
-      <AppShell.Main bg={theme.colors.gray[0]}>
-        <Box p="md" style={{ maxWidth: 1200, margin: '0 auto', backgroundColor: 'white', borderRadius: theme.radius.md, minHeight: 'calc(100vh - 100px)' }}>
+      <AppShell.Main bg="var(--mantine-color-gray-light)">
+        <Box p="md" style={{ maxWidth: 1200, margin: '0 auto', backgroundColor: 'var(--mantine-color-body)', borderRadius: theme.radius.md, minHeight: 'calc(100vh - 100px)' }}>
           <Outlet />
         </Box>
       </AppShell.Main>

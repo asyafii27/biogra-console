@@ -23,8 +23,11 @@ apiClient.interceptors.request.use((config) => {
 export const AuthService = {
   login: async (data: any) => {
     const response = await apiClient.post('/auth/login', data);
-    if (response.data.token) {
-      localStorage.setItem('token', response.data.token);
+    // Backend API wraps data in `data` object: { code: 200, data: { token: "..." } }
+    if (response.data?.data?.token) {
+      localStorage.setItem('token', response.data.data.token);
+    } else if (response.data?.token) {
+      localStorage.setItem('token', response.data.token); // fallback
     }
     return response.data;
   },

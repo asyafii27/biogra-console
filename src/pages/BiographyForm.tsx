@@ -88,7 +88,7 @@ export default function BiographyForm() {
               label="Birth Date"
               placeholder="Pick a date"
               value={form.values.birth_date ? new Date(form.values.birth_date) : null}
-              onChange={(date) => form.setFieldValue('birth_date', date ? dayjs(date).format('YYYY-MM-DD') : '')}
+              onChange={(date) => form.setFieldValue('birth_date', date ? dayjs(date).toISOString() : '')}
               error={form.errors.birth_date}
             />
             <TextInput

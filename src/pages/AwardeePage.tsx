@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Button, 
@@ -11,55 +11,49 @@ import {
   Textarea,
   Stack,
   Text,
-  Badge
+  Badge,
+  Loader,
+  Center
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { MonthPickerInput } from '@mantine/dates';
 import dayjs from 'dayjs';
-
-// Dummy Interface & Data
-interface Awardee {
-  id: string;
-  title: string;
-  issuer: string;
-  date: string;
-  description?: string;
-}
-
-const DUMMY_DATA: Awardee[] = [
-  {
-    id: '1',
-    title: '1st Place Hackathon',
-    issuer: 'Tech University',
-    date: 'Oct 2022',
-    description: 'Won first place in the annual national hackathon.',
-  },
-  {
-    id: '2',
-    title: 'Best Student Award',
-    issuer: 'University Faculty',
-    date: '2023',
-  }
-];
+import { apiClient, API_ROUTES } from '../services/apiRoutes';
+import type { Awardee } from '../types/models';
 
 export default function AwardeePage() {
   const [opened, { open, close }] = useDisclosure(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [data, setData] = useState<Awardee[]>(DUMMY_DATA);
+  const [data, setData] = useState<Awardee[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchAwardees = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(API_ROUTES.AWARDEES);
+      setData(response.data.data || response.data);
+    } catch (error) {
+      console.error('Failed to fetch awardees:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchAwardees();
+  }, []);
 
   const form = useForm({
     initialValues: {
-      id: '',
+      id: undefined as number | undefined,
       title: '',
-      issuer: '',
       date: '',
       description: '',
     },
     validate: {
       title: (value) => (value ? null : 'Award Title is required'),
-      issuer: (value) => (value ? null : 'Issuer is required'),
     },
   });
 
@@ -74,36 +68,54 @@ export default function AwardeePage() {
     form.setValues({
       id: item.id,
       title: item.title,
-      issuer: item.issuer,
       date: item.date,
       description: item.description || '',
     });
     open();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id?: number) => {
+    if (!id) return;
     if (confirm('Are you sure you want to delete this award?')) {
-      setData(data.filter((item) => item.id !== id));
+      try {
+        await apiClient.delete(`${API_ROUTES.AWARDEES}/${id}`);
+        fetchAwardees();
+      } catch (error) {
+        console.error('Failed to delete awardee:', error);
+      }
     }
   };
 
-  const handleSubmit = (values: typeof form.values) => {
-    if (isEditing) {
-      setData(data.map((item) => (item.id === values.id ? values : item)));
-    } else {
-      setData([...data, { ...values, id: Date.now().toString() }]);
+  const handleSubmit = async (values: typeof form.values) => {
+    try {
+      const payload = {
+        title: values.title,
+        date: values.date,
+        description: values.description
+      };
+
+      if (isEditing && values.id) {
+        await apiClient.put(`${API_ROUTES.AWARDEES}/${values.id}`, payload);
+      } else {
+        await apiClient.post(API_ROUTES.AWARDEES, payload);
+      }
+      close();
+      fetchAwardees();
+    } catch (error) {
+      console.error('Failed to save awardee:', error);
     }
-    close();
   };
 
-  const rows = data.map((item) => (
+  const rows = data.map((item, index) => (
     <Table.Tr key={item.id}>
+      <Table.Td>{index + 1}</Table.Td>
       <Table.Td>
         <Text fw={500}>{item.title}</Text>
-        <Text size="sm" c="dimmed">{item.issuer}</Text>
       </Table.Td>
       <Table.Td>
-        <Badge variant="light" color="green">{item.date}</Badge>
+        <Badge variant="light" color="green">
+          {item.date ? dayjs(item.date).format('MMM YYYY') : '-'}
+        </Badge>
       </Table.Td>
       <Table.Td>{item.description || '-'}</Table.Td>
       <Table.Td>
@@ -128,17 +140,24 @@ export default function AwardeePage() {
         </Button>
       </Group>
 
-      <Table striped highlightOnHover withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Award & Issuer</Table.Th>
-            <Table.Th>Date</Table.Th>
-            <Table.Th>Description</Table.Th>
-            <Table.Th>Actions</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
+      {loading ? (
+        <Center my="xl">
+          <Loader color="green" />
+        </Center>
+      ) : (
+        <Table striped highlightOnHover withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={50}>No.</Table.Th>
+              <Table.Th>Award Title</Table.Th>
+              <Table.Th>Date</Table.Th>
+              <Table.Th>Description</Table.Th>
+              <Table.Th>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      )}
 
       <Modal opened={opened} onClose={close} title={isEditing ? 'Edit Award' : 'Add Award'} size="md">
         <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -149,17 +168,11 @@ export default function AwardeePage() {
               placeholder="e.g. Best Developer"
               {...form.getInputProps('title')}
             />
-            <TextInput
-              withAsterisk
-              label="Issuer / Institution"
-              placeholder="e.g. University Name"
-              {...form.getInputProps('issuer')}
-            />
             <MonthPickerInput
               label="Date / Year"
               placeholder="Pick month and year"
               value={form.values.date ? new Date(form.values.date) : null}
-              onChange={(date) => form.setFieldValue('date', date ? dayjs(date).format('MMM YYYY') : '')}
+              onChange={(date) => form.setFieldValue('date', date ? dayjs(date).toISOString() : '')}
               error={form.errors.date}
             />
             <Textarea

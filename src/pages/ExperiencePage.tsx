@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Button, 
@@ -11,59 +11,55 @@ import {
   Textarea,
   Stack,
   Text,
-  Badge
+  Badge,
+  Loader,
+  Center,
+  Checkbox
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
 import { MonthPickerInput } from '@mantine/dates';
 import dayjs from 'dayjs';
-
-// Dummy Interface & Data for UI Mockup
-interface Experience {
-  id: string;
-  title: string;
-  company: string;
-  startDate: string;
-  endDate: string;
-  description: string;
-}
-
-const DUMMY_DATA: Experience[] = [
-  {
-    id: '1',
-    title: 'Frontend Developer',
-    company: 'Tech Corp',
-    startDate: 'Jan 2022',
-    endDate: 'Present',
-    description: 'Developing user interfaces using React and Mantine.',
-  },
-  {
-    id: '2',
-    title: 'Web Developer Intern',
-    company: 'Startup Inc',
-    startDate: 'Jun 2021',
-    endDate: 'Dec 2021',
-    description: 'Assisted in building internal tools using Vue.js.',
-  }
-];
+import { apiClient, API_ROUTES } from '../services/apiRoutes';
+import type { Experience } from '../types/models';
 
 export default function ExperiencePage() {
   const [opened, { open, close }] = useDisclosure(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [data, setData] = useState<Experience[]>(DUMMY_DATA);
+  const [data, setData] = useState<Experience[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchExperiences = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(API_ROUTES.EXPERIENCES);
+      // Depending on API response, it might be { data: [...] } or just an array
+      setData(response.data.data || response.data);
+    } catch (error) {
+      console.error('Failed to fetch experiences:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchExperiences();
+  }, []);
 
   const form = useForm({
     initialValues: {
-      id: '',
-      title: '',
+      id: undefined as number | undefined,
+      position: '',
       company: '',
-      startDate: '',
-      endDate: '',
+      start_date: '',
+      end_date: '',
+      is_current: false,
+      location: '',
       description: '',
     },
     validate: {
-      title: (value) => (value ? null : 'Title is required'),
+      position: (value) => (value ? null : 'Position is required'),
       company: (value) => (value ? null : 'Company is required'),
     },
   });
@@ -76,37 +72,70 @@ export default function ExperiencePage() {
 
   const handleEdit = (item: Experience) => {
     setIsEditing(true);
-    form.setValues(item);
+    form.setValues({
+      id: item.id,
+      position: item.position,
+      company: item.company,
+      start_date: item.start_date,
+      end_date: item.end_date || '',
+      is_current: item.is_current,
+      location: item.location || '',
+      description: item.description || '',
+    });
     open();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id?: number) => {
+    if (!id) return;
     if (confirm('Are you sure you want to delete this item?')) {
-      setData(data.filter((item) => item.id !== id));
+      try {
+        await apiClient.delete(`${API_ROUTES.EXPERIENCES}/${id}`);
+        fetchExperiences();
+      } catch (error) {
+        console.error('Failed to delete experience:', error);
+      }
     }
   };
 
-  const handleSubmit = (values: typeof form.values) => {
-    if (isEditing) {
-      setData(data.map((item) => (item.id === values.id ? values : item)));
-    } else {
-      setData([...data, { ...values, id: Date.now().toString() }]);
+  const handleSubmit = async (values: typeof form.values) => {
+    try {
+      // Ensure date strings are in correct format or convert them if necessary
+      // For this API payload, we will send what form has (which should be ISO or standard string)
+      const payload = {
+        company: values.company,
+        position: values.position,
+        start_date: values.start_date,
+        end_date: values.is_current ? undefined : values.end_date,
+        is_current: values.is_current,
+        location: values.location,
+        description: values.description
+      };
+
+      if (isEditing && values.id) {
+        await apiClient.put(`${API_ROUTES.EXPERIENCES}/${values.id}`, payload);
+      } else {
+        await apiClient.post(API_ROUTES.EXPERIENCES, payload);
+      }
+      close();
+      fetchExperiences();
+    } catch (error) {
+      console.error('Failed to save experience:', error);
     }
-    close();
   };
 
-  const rows = data.map((item) => (
+  const rows = data.map((item, index) => (
     <Table.Tr key={item.id}>
+      <Table.Td>{index + 1}</Table.Td>
       <Table.Td>
-        <Text fw={500}>{item.title}</Text>
-        <Text size="sm" c="dimmed">{item.company}</Text>
+        <Text fw={500}>{item.position}</Text>
+        <Text size="sm" c="dimmed">{item.company} {item.location ? `- ${item.location}` : ''}</Text>
       </Table.Td>
       <Table.Td>
         <Badge variant="light">
-          {item.startDate} - {item.endDate || 'Present'}
+          {item.start_date ? dayjs(item.start_date).format('MMM YYYY') : '-'} - {item.is_current ? 'Present' : (item.end_date ? dayjs(item.end_date).format('MMM YYYY') : '')}
         </Badge>
       </Table.Td>
-      <Table.Td>{item.description}</Table.Td>
+      <Table.Td>{item.description || '-'}</Table.Td>
       <Table.Td>
         <Group gap="sm">
           <ActionIcon variant="light" color="blue" onClick={() => handleEdit(item)}>
@@ -129,26 +158,33 @@ export default function ExperiencePage() {
         </Button>
       </Group>
 
-      <Table striped highlightOnHover withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th>Role & Company</Table.Th>
-            <Table.Th>Duration</Table.Th>
-            <Table.Th>Description</Table.Th>
-            <Table.Th>Actions</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
+      {loading ? (
+        <Center my="xl">
+          <Loader />
+        </Center>
+      ) : (
+        <Table striped highlightOnHover withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={50}>No.</Table.Th>
+              <Table.Th>Role & Company</Table.Th>
+              <Table.Th>Duration</Table.Th>
+              <Table.Th>Description</Table.Th>
+              <Table.Th>Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      )}
 
       <Modal opened={opened} onClose={close} title={isEditing ? 'Edit Experience' : 'Add Experience'} size="lg">
         <form onSubmit={form.onSubmit(handleSubmit)}>
           <Stack>
             <TextInput
               withAsterisk
-              label="Job Title"
+              label="Position / Job Title"
               placeholder="e.g. Frontend Developer"
-              {...form.getInputProps('title')}
+              {...form.getInputProps('position')}
             />
             <TextInput
               withAsterisk
@@ -156,22 +192,36 @@ export default function ExperiencePage() {
               placeholder="e.g. Tech Corp"
               {...form.getInputProps('company')}
             />
+            <TextInput
+              label="Location"
+              placeholder="e.g. Slawi, Indonesia"
+              {...form.getInputProps('location')}
+            />
+            
+            <Checkbox
+              label="I currently work here"
+              checked={form.values.is_current}
+              onChange={(event) => form.setFieldValue('is_current', event.currentTarget.checked)}
+            />
+
             <Group grow>
               <MonthPickerInput
                 label="Start Date"
                 placeholder="Pick start month"
-                value={form.values.startDate && form.values.startDate !== 'Present' ? new Date(form.values.startDate) : null}
-                onChange={(date) => form.setFieldValue('startDate', date ? dayjs(date).format('MMM YYYY') : '')}
-                error={form.errors.startDate}
+                value={form.values.start_date ? new Date(form.values.start_date) : null}
+                onChange={(date) => form.setFieldValue('start_date', date ? dayjs(date).toISOString() : '')}
+                error={form.errors.start_date}
               />
-              <MonthPickerInput
-                clearable
-                label="End Date"
-                placeholder="Leave empty for Present"
-                value={form.values.endDate && form.values.endDate !== 'Present' ? new Date(form.values.endDate) : null}
-                onChange={(date) => form.setFieldValue('endDate', date ? dayjs(date).format('MMM YYYY') : '')}
-                error={form.errors.endDate}
-              />
+              {!form.values.is_current && (
+                <MonthPickerInput
+                  clearable
+                  label="End Date"
+                  placeholder="Pick end month"
+                  value={form.values.end_date ? new Date(form.values.end_date) : null}
+                  onChange={(date) => form.setFieldValue('end_date', date ? dayjs(date).toISOString() : '')}
+                  error={form.errors.end_date}
+                />
+              )}
             </Group>
             <Textarea
               label="Description"

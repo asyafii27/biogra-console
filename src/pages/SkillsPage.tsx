@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { 
   Box, 
   Button, 
@@ -11,46 +11,47 @@ import {
   Textarea,
   Stack,
   Text,
-  Badge
+  Badge,
+  Loader,
+  Center
 } from '@mantine/core';
 import { useDisclosure } from '@mantine/hooks';
 import { IconEdit, IconTrash, IconPlus } from '@tabler/icons-react';
 import { useForm } from '@mantine/form';
-
-// Dummy Interface & Data
-interface Skill {
-  id: string;
-  category: string;
-  details: string;
-}
-
-const DUMMY_DATA: Skill[] = [
-  {
-    id: '1',
-    category: 'Back End Web Dev',
-    details: 'PHP, Laravel, CodeIgniter, RESTful API, beginner: NodeJS, ExpressJS',
-  },
-  {
-    id: '2',
-    category: 'Front End Web Dev',
-    details: 'HTML, CSS, JavaScript, Bootstrap, ReactJS',
-  }
-];
+import { apiClient, API_ROUTES } from '../services/apiRoutes';
+import type { Skill } from '../types/models';
 
 export default function SkillsPage() {
   const [opened, { open, close }] = useDisclosure(false);
   const [isEditing, setIsEditing] = useState(false);
-  const [data, setData] = useState<Skill[]>(DUMMY_DATA);
+  const [data, setData] = useState<Skill[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  const fetchSkills = async () => {
+    setLoading(true);
+    try {
+      const response = await apiClient.get(API_ROUTES.SKILLS);
+      setData(response.data.data || response.data);
+    } catch (error) {
+      console.error('Failed to fetch skills:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSkills();
+  }, []);
 
   const form = useForm({
     initialValues: {
-      id: '',
+      id: undefined as number | undefined,
       category: '',
-      details: '',
+      description: '',
     },
     validate: {
       category: (value) => (value ? null : 'Category is required'),
-      details: (value) => (value ? null : 'Details are required'),
+      description: (value) => (value ? null : 'Description/Details are required'),
     },
   });
 
@@ -66,28 +67,45 @@ export default function SkillsPage() {
     open();
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id?: number) => {
+    if (!id) return;
     if (confirm('Are you sure you want to delete this skill category?')) {
-      setData(data.filter((item) => item.id !== id));
+      try {
+        await apiClient.delete(`${API_ROUTES.SKILLS}/${id}`);
+        fetchSkills();
+      } catch (error) {
+        console.error('Failed to delete skill:', error);
+      }
     }
   };
 
-  const handleSubmit = (values: typeof form.values) => {
-    if (isEditing) {
-      setData(data.map((item) => (item.id === values.id ? values : item)));
-    } else {
-      setData([...data, { ...values, id: Date.now().toString() }]);
+  const handleSubmit = async (values: typeof form.values) => {
+    try {
+      const payload = {
+        category: values.category,
+        description: values.description
+      };
+
+      if (isEditing && values.id) {
+        await apiClient.put(`${API_ROUTES.SKILLS}/${values.id}`, payload);
+      } else {
+        await apiClient.post(API_ROUTES.SKILLS, payload);
+      }
+      close();
+      fetchSkills();
+    } catch (error) {
+      console.error('Failed to save skill:', error);
     }
-    close();
   };
 
-  const rows = data.map((item) => (
+  const rows = data.map((item, index) => (
     <Table.Tr key={item.id}>
+      <Table.Td>{index + 1}</Table.Td>
       <Table.Td>
         <Text fw={500}>{item.category}</Text>
       </Table.Td>
       <Table.Td>
-        {item.details.split(',').map((skill, index) => (
+        {item.description.split(',').map((skill, index) => (
           <Badge key={index} variant="outline" color="cyan" mr={4} mb={4}>
             {skill.trim()}
           </Badge>
@@ -115,16 +133,23 @@ export default function SkillsPage() {
         </Button>
       </Group>
 
-      <Table striped highlightOnHover withTableBorder withColumnBorders>
-        <Table.Thead>
-          <Table.Tr>
-            <Table.Th w="25%">Category</Table.Th>
-            <Table.Th>Skills / Details</Table.Th>
-            <Table.Th w="100px">Actions</Table.Th>
-          </Table.Tr>
-        </Table.Thead>
-        <Table.Tbody>{rows}</Table.Tbody>
-      </Table>
+      {loading ? (
+        <Center my="xl">
+          <Loader color="cyan" />
+        </Center>
+      ) : (
+        <Table striped highlightOnHover withTableBorder withColumnBorders>
+          <Table.Thead>
+            <Table.Tr>
+              <Table.Th w={50}>No.</Table.Th>
+              <Table.Th w="25%">Category</Table.Th>
+              <Table.Th>Skills / Details</Table.Th>
+              <Table.Th w="100px">Actions</Table.Th>
+            </Table.Tr>
+          </Table.Thead>
+          <Table.Tbody>{rows}</Table.Tbody>
+        </Table>
+      )}
 
       <Modal opened={opened} onClose={close} title={isEditing ? 'Edit Skill Category' : 'Add Skill Category'} size="md">
         <form onSubmit={form.onSubmit(handleSubmit)}>
@@ -140,7 +165,7 @@ export default function SkillsPage() {
               label="Skills / Details"
               placeholder="e.g. PHP, Laravel, MySQL (Comma separated)"
               minRows={3}
-              {...form.getInputProps('details')}
+              {...form.getInputProps('description')}
             />
             <Group justify="flex-end" mt="md">
               <Button variant="default" onClick={close}>Cancel</Button>
